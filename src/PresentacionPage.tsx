@@ -221,10 +221,7 @@ function Hero() {
       <div className="absolute inset-0 bg-tinta-900/55" aria-hidden />
       <div className="relative mx-auto w-full max-w-6xl px-5 py-24 sm:px-8">
         <div className="max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-widest text-primary-foreground/90">
-            Restaurante · Cocina de casa
-          </p>
-          <LogotipoAmena className="mt-5 h-16 w-auto text-primary-foreground sm:h-20" />
+          <LogotipoAmena className="h-16 w-auto text-primary-foreground sm:h-20" />
           <p className="mt-5 text-xl font-semibold tracking-tight text-primary-foreground text-balance sm:text-3xl">
             Sabores reales, momentos reales.
           </p>
@@ -273,9 +270,9 @@ function QueEs() {
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>
           <p className="mb-5 text-muted-foreground">
-            Amena es un <strong>restaurante de cocina honesta</strong>: platillos frescos, hechos en
-            casa, en un espacio cálido donde vale la pena quedarse. Trabajamos con{' '}
-            <strong>dos enfoques</strong>, con la misma cocina detrás.
+            Amena es un <strong>restaurante para todo el día</strong>: desayunos, comidas y cenas
+            con platillos frescos y de temporada, en un espacio cálido donde vale la pena quedarse.
+            Trabajamos con <strong>dos enfoques</strong>, con la misma cocina detrás.
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Tarjeta k="El restaurante">
@@ -298,7 +295,7 @@ function LaCarta() {
   const items: { k: string; d: string; img: string }[] = [
     {
       k: 'Desayunos',
-      d: 'Para empezar bien el día: huevos al gusto, chilaquiles, pan hecho en casa, fruta de temporada y buen café.',
+      d: 'Para empezar bien el día: huevos al gusto, chilaquiles, pan del día, fruta de temporada y buen café.',
       img: '/imagenes/alimentos/v-alimento-3.jpg',
     },
     {
@@ -364,10 +361,10 @@ function ShowcaseAlimentos() {
         {/* Contexto primero. */}
         <div>
           <span className="text-xs font-bold uppercase tracking-widest text-primary">
-            El sabor de Amena
+            Nuestra cocina
           </span>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-            Cocina fresca, hecha en casa
+            Cocina fresca de temporada
           </h2>
           <p className="mt-4 max-w-md text-muted-foreground">
             El menú cambia con la temporada: platillos preparados cada día, con ingredientes de
@@ -419,11 +416,11 @@ function Bebidas() {
       <div className="max-w-2xl">
         <span className="text-xs font-bold uppercase tracking-widest text-primary">La barra</span>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-          Café de casa y bebidas de especialidad
+          Café y bebidas de especialidad
         </h2>
         <p className="mt-4 text-muted-foreground">
-          Tostamos y molemos nuestro café en casa. Y para acompañar cualquier momento del día, una
-          carta de bebidas de especialidad: de un buen matcha a la coctelería de la casa.
+          Tostamos y molemos nuestro propio café. Y para acompañar cualquier momento del día, una
+          carta de bebidas de especialidad: de un buen matcha a nuestra coctelería.
         </p>
       </div>
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
@@ -605,6 +602,14 @@ function SocialKitchen() {
             que ordena todo el proceso. En lugar de vales, cobros a mano o listas en papel, todo vive
             en un solo lugar.
           </p>
+          <div className="mt-6">
+            <a
+              href="https://portal-empresarial.amena.social/login"
+              className="inline-flex items-center rounded-full bg-salvia-600 px-5 py-2.5 text-sm font-semibold text-white transition-[background-color,transform] hover:bg-salvia-700 active:scale-95"
+            >
+              Iniciar sesión
+            </a>
+          </div>
         </div>
 
         {/* Estado actual — en funcionamiento hoy. */}

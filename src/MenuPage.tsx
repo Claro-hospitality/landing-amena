@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cn } from './lib/utils'
 import { LogotipoAmena } from './components/logotipo-amena'
 
@@ -225,7 +225,7 @@ const MENU: Bloque[] = [
   {
     id: 'bebidas',
     t: 'Bebidas',
-    horario: 'Café de casa, especialidades y coctelería',
+    horario: 'Café, especialidades y coctelería',
     grupos: [
       {
         t: 'Clásicos de café',
@@ -366,18 +366,18 @@ export function MenuPage() {
       <Encabezado />
 
       {/* Portada del menú, a pantalla completa. */}
-      <section className="flex min-h-svh items-center justify-center bg-crema-100">
+      <section className="flex min-h-svh items-center justify-center bg-crema-100 sm:min-h-0 sm:bg-transparent sm:py-12">
         <h1 className="sr-only">Menú — Amena Restaurante</h1>
         <img
           src={PORTADA}
           alt="Menú de Amena — Sabores reales, momentos reales"
-          className="h-svh w-full object-cover sm:w-auto sm:max-w-full sm:object-contain"
+          className="h-svh w-full object-cover sm:h-auto sm:max-h-[85vh] sm:w-auto sm:max-w-full sm:rounded-2xl sm:border sm:border-border sm:object-contain"
         />
       </section>
 
       <main className="mx-auto w-full max-w-5xl px-5 pb-20 pt-12 sm:px-8 sm:pt-16">
         <p className="mb-12 max-w-2xl text-pretty text-muted-foreground sm:mb-16">
-          Cocina fresca hecha en casa, a lo largo del día. Los platillos cambian con la temporada,
+          Cocina fresca a lo largo del día. Los platillos cambian con la temporada,
           así que algunos pueden variar en el restaurante.
         </p>
 
@@ -394,11 +394,11 @@ export function MenuPage() {
       </main>
 
       {/* Cierre del menú, a pantalla completa. */}
-      <section className="flex min-h-svh items-center justify-center bg-salvia-500">
+      <section className="flex min-h-svh items-center justify-center bg-salvia-500 sm:min-h-0 sm:bg-transparent sm:py-12">
         <img
           src={CIERRE}
           alt="Gracias por estar aquí — Amena · Calle Justo Sierra 2600, Guadalajara"
-          className="h-svh w-full object-cover sm:w-auto sm:max-w-full sm:object-contain"
+          className="h-svh w-full object-cover sm:h-auto sm:max-h-[85vh] sm:w-auto sm:max-w-full sm:rounded-2xl sm:border sm:border-border sm:object-contain"
         />
       </section>
 
@@ -411,10 +411,16 @@ export function MenuPage() {
 
 function Encabezado() {
   const [activo, setActivo] = useState(MENU[0].id)
+  const pills = useRef<Record<string, HTMLAnchorElement | null>>({})
+  // Evita que el observer "pelee" con el scroll disparado por un clic.
+  const scrollProgramado = useRef(false)
+  const bloqueoTimeout = useRef<number | undefined>(undefined)
 
+  // Resalta la pestaña de la sección visible mientras se hace scroll.
   useEffect(() => {
     const obs = new IntersectionObserver(
       (entries) => {
+        if (scrollProgramado.current) return
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
@@ -429,6 +435,34 @@ function Encabezado() {
     return () => obs.disconnect()
   }, [])
 
+  // Cada vez que cambia la sección activa, desliza el carrusel para centrar
+  // su pestaña — así siempre queda a la vista (como los tabs del portal).
+  useEffect(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    pills.current[activo]?.scrollIntoView({
+      behavior: reduce ? 'auto' : 'smooth',
+      inline: 'center',
+      block: 'nearest',
+    })
+  }, [activo])
+
+  function ir(e: React.MouseEvent, id: string) {
+    e.preventDefault()
+    setActivo(id)
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // Marca el scroll como programado para que el observer no reasigne la
+    // sección activa a media animación; se libera al terminar.
+    scrollProgramado.current = true
+    document.getElementById(id)?.scrollIntoView({
+      behavior: reduce ? 'auto' : 'smooth',
+      block: 'start',
+    })
+    window.clearTimeout(bloqueoTimeout.current)
+    bloqueoTimeout.current = window.setTimeout(() => {
+      scrollProgramado.current = false
+    }, 700)
+  }
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-5 sm:px-8">
@@ -436,13 +470,17 @@ function Encabezado() {
           <LogotipoAmena className="h-5 w-auto text-salvia-700" />
         </a>
         <nav
-          className="ml-auto flex min-w-0 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="ml-auto flex min-w-0 items-center gap-1 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Secciones del menú"
         >
           {MENU.map((b) => (
             <a
               key={b.id}
+              ref={(el) => {
+                pills.current[b.id] = el
+              }}
               href={`#${b.id}`}
+              onClick={(e) => ir(e, b.id)}
               aria-current={activo === b.id ? 'true' : undefined}
               className={cn(
                 'shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
@@ -536,17 +574,21 @@ function Fila({ item }: { item: Item }) {
 /** Lista breve para Adicionales / Side: nombre + precio, en línea. */
 function CompactoBox({ grupo }: { grupo: Grupo }) {
   return (
-    <div className="mt-8 rounded-2xl border border-border bg-card p-5">
+    <div className="mt-8 rounded-2xl border border-naranja-100 bg-naranja-50 p-5 sm:p-6">
       {grupo.t && (
-        <h3 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-salvia-700">
+        <h3 className="mb-4 font-mono text-xs font-bold uppercase tracking-wider text-naranja-700">
           {grupo.t}
         </h3>
       )}
-      <div className="flex flex-wrap gap-x-5 gap-y-2">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-0 sm:grid-cols-3 lg:grid-cols-4">
         {grupo.items.map((it) => (
-          <span key={it.n} className="text-sm text-foreground">
-            {it.n} <span className="font-mono font-semibold text-salvia-700">{it.p}</span>
-          </span>
+          <div
+            key={it.n}
+            className="flex items-baseline justify-between gap-2 border-b border-dashed border-naranja-200/70 py-2"
+          >
+            <span className="text-sm leading-snug text-foreground">{it.n}</span>
+            <span className="shrink-0 font-mono text-sm font-semibold text-naranja-700">{it.p}</span>
+          </div>
         ))}
       </div>
     </div>
