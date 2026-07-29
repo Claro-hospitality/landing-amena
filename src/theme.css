@@ -1,0 +1,172 @@
+/* ============================================================
+   AMENA — Design tokens del sistema (landing pública)
+   Fuente: Amena Brand Book ("Sabores reales, momentos reales.")
+   Tipografía UI: Geist
+
+   Extraído de @amena/ui (amena-frontend) para este sitio standalone.
+   Se conservan las escalas de marca y los tokens semánticos; se omiten
+   las capas de shadcn/base-ui (este landing no usa esos componentes).
+
+   ── Sistema de color (fuente única de verdad) ──────────────────
+     • Primario   — Naranja Acento #F68D2E → escala `naranja-50…900` (util. `bg-naranja-*`)
+     • Secundario — Verde Salvia   #92A271 → escala `salvia-50…900`  (util. `bg-salvia-*`)
+   Fondos derivan de la Crema Base #F4EFE3 (`crema-*`) y el texto del neutro
+   cálido `tinta-*`. Todo hex de marca se define UNA sola vez en `@theme`;
+   los tokens semánticos lo referencian con `var(--color-…)`.
+   ============================================================ */
+
+@import "tailwindcss";
+
+/* Fuentes de UI (variable). Registran las utilidades font-sans/font-mono. */
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+/* Modo oscuro basado en la clase .dark (definido, sin toggle en el landing). */
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* ---------- Tipografía ---------- */
+  --font-sans: "Geist Variable", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+
+  /* ---------- Marca: Naranja Acento (color primario de acción) ---------- */
+  --color-naranja-50: #fef5ec;
+  --color-naranja-100: #fde8d3;
+  --color-naranja-200: #fbd1a7;
+  --color-naranja-300: #f9b97a;
+  --color-naranja-400: #f8a354;
+  --color-naranja-500: #f68d2e; /* ← color de marca */
+  --color-naranja-600: #e17615;
+  --color-naranja-700: #b95f11;
+  --color-naranja-800: #924a0e;
+  --color-naranja-900: #6e370b;
+
+  /* ---------- Marca: Verde Salvia (color secundario / éxito) ---------- */
+  --color-salvia-50: #f5f7f0;
+  --color-salvia-100: #e8eddd;
+  --color-salvia-200: #d2dbbc;
+  --color-salvia-300: #bbc89c;
+  --color-salvia-400: #a6b586;
+  --color-salvia-500: #92a271; /* ← color de marca */
+  --color-salvia-600: #78885a;
+  --color-salvia-700: #5e6b46;
+  --color-salvia-800: #454f33;
+  --color-salvia-900: #2e3522;
+
+  /* ---------- Marca: Crema Base (fondos y superficies) ---------- */
+  --color-crema-50: #fcfaf5;
+  --color-crema-100: #f4efe3; /* ← color de marca */
+  --color-crema-200: #e9e1cd;
+  --color-crema-300: #dbd0b4;
+  --color-crema-400: #c4b58f;
+  --color-crema-500: #a99873;
+
+  /* ---------- Tinta (texto) — neutro cálido acorde a la paleta ---------- */
+  --color-tinta-500: #6b675e;
+  --color-tinta-700: #4a473f;
+  --color-tinta-900: #2b2925;
+}
+
+/* ============================================================
+   Variables semánticas (colores de marca en oklch, del export tweakcn).
+   Modo claro en :root, modo oscuro en .dark.
+   ============================================================ */
+
+:root {
+  --radius: 0.625rem; /* esquinas suaves = calidez de la marca */
+
+  --background: oklch(0.9853 0.0069 88.6416);
+  --foreground: oklch(0.2816 0.0077 84.5932);
+
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.2816 0.0077 84.5932);
+
+  --primary: var(--color-naranja-500); /* naranja: acciones principales */
+  --primary-foreground: oklch(1.0000 0 0);
+
+  /* Tinte salvia MUY claro para badges/superficies secundarias neutras. NO es el
+     verde de marca puro: ese es `salvia-500` (#92A271) → usar `bg-salvia-500`. */
+  --secondary: oklch(0.9379 0.0219 120.9735);
+  --secondary-foreground: oklch(0.4106 0.0461 124.3666);
+
+  --muted: oklch(0.9527 0.0168 87.9996);
+  --muted-foreground: oklch(0.5147 0.0147 86.8750);
+
+  --accent: oklch(0.9424 0.0361 67.3663); /* naranja suave: hovers y resaltados */
+  --accent-foreground: oklch(0.4896 0.1172 53.2636);
+
+  --border: oklch(0.9107 0.0280 88.7572);
+  --ring: var(--color-naranja-500); /* focus ring en naranja de marca */
+
+  --tracking-normal: -0.01em;
+}
+
+.dark {
+  --background: oklch(0.2225 0.0041 84.5879);
+  --foreground: oklch(0.9853 0.0069 88.6416);
+
+  --card: oklch(0.2816 0.0077 84.5932);
+  --card-foreground: oklch(0.9853 0.0069 88.6416);
+
+  --primary: var(--color-naranja-500);
+  --primary-foreground: oklch(1.0000 0 0);
+
+  --secondary: oklch(0.4106 0.0461 124.3666);
+  --secondary-foreground: oklch(0.9379 0.0219 120.9735);
+
+  --muted: oklch(0.2816 0.0077 84.5932);
+  --muted-foreground: oklch(0.6574 0.0184 88.0391);
+
+  --accent: oklch(0.4896 0.1172 53.2636);
+  --accent-foreground: oklch(0.9424 0.0361 67.3663);
+
+  --border: oklch(0.3494 0.0110 84.5926);
+  --ring: var(--color-naranja-500);
+
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
