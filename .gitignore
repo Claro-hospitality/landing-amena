@@ -3,6 +3,10 @@ dist
 dist-ssr
 *.local
 
+# Firebase
+.firebase
+firebase-debug.log
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
