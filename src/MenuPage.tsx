@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { cn } from './lib/utils'
 import { LogotipoAmena } from './components/logotipo-amena'
 
@@ -466,9 +467,21 @@ function Encabezado() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-5 sm:px-8">
-        <a href="/" className="shrink-0" aria-label="Amena — inicio">
+        <Link to="/" className="shrink-0" aria-label="Amena — inicio">
           <LogotipoAmena className="h-5 w-auto text-salvia-700" />
-        </a>
+        </Link>
+        <Link
+          to="/eventos"
+          className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground"
+        >
+          Eventos
+        </Link>
+        <Link
+          to="/facturar"
+          className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground"
+        >
+          Facturar
+        </Link>
         <nav
           className="ml-auto flex min-w-0 items-center gap-1 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Secciones del menú"
@@ -601,10 +614,10 @@ function Pie() {
   return (
     <footer className="border-t border-border">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-5 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <a href="/" className="flex items-center gap-2 hover:text-foreground" aria-label="Amena — inicio">
+        <Link to="/" className="flex items-center gap-2 hover:text-foreground" aria-label="Amena — inicio">
           <LogotipoAmena className="h-4 w-auto text-muted-foreground" aria-hidden />
           <span>Restaurante · Sabores reales, momentos reales.</span>
-        </a>
+        </Link>
         <span>Calle Justo Sierra 2600, Guadalajara, Jal.</span>
       </div>
     </footer>

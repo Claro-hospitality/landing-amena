@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { cn } from './lib/utils'
 import { LogotipoAmena } from './components/logotipo-amena'
 
@@ -125,12 +126,24 @@ function BarraSuperior() {
         </a>
         <div className="flex items-center gap-2 sm:gap-3">
           <NavTabs />
-          <a
-            href="/menu"
+          <Link
+            to="/eventos"
+            className="rounded-full border border-border px-4 py-1.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/60 active:scale-95"
+          >
+            Eventos
+          </Link>
+          <Link
+            to="/facturar"
+            className="rounded-full border border-border px-4 py-1.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/60 active:scale-95"
+          >
+            Facturar
+          </Link>
+          <Link
+            to="/menu"
             className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition-[background-color,transform] hover:bg-naranja-600 active:scale-95"
           >
             Menú
-          </a>
+          </Link>
         </div>
       </div>
     </header>
@@ -231,12 +244,12 @@ function Hero() {
             para disfrutar sin prisa.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <a
-              href="/menu"
+            <Link
+              to="/menu"
               className="inline-flex items-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-[background-color,transform] hover:bg-naranja-600 active:scale-95"
             >
               Ver el menú
-            </a>
+            </Link>
             <a
               href="#social-kitchen"
               className="inline-flex items-center rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-5 py-2.5 text-sm font-semibold text-primary-foreground backdrop-blur-sm transition-[background-color,transform] hover:bg-primary-foreground/20 active:scale-95"
@@ -334,12 +347,12 @@ function LaCarta() {
         ))}
       </div>
       <div className="mt-6">
-        <a
-          href="/menu"
+        <Link
+          to="/menu"
           className="inline-flex items-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-[background-color,transform] hover:bg-naranja-600 active:scale-95"
         >
           Ver la carta completa →
-        </a>
+        </Link>
       </div>
     </Seccion>
   )

@@ -1,17 +1,29 @@
 import './theme.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { PresentacionPage } from './PresentacionPage'
 import { MenuPage } from './MenuPage'
-
-// Enrutado mínimo por ruta (sin dependencias): el sitio solo tiene dos páginas.
-// Firebase Hosting reescribe cualquier ruta a index.html, así que /menu carga
-// esta app y aquí decidimos qué página mostrar.
-const ruta = window.location.pathname.replace(/\/+$/, '')
-const Pagina = ruta === '/menu' ? MenuPage : PresentacionPage
+import { EventosPage } from './EventosPage'
+import { EventoDetallePage } from './EventoDetallePage'
+import { ReservaPage } from './ReservaPage'
+import { BoletoPage } from './BoletoPage'
+import { FacturacionPage } from './FacturacionPage'
+import { FacturaPage } from './FacturaPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Pagina />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<PresentacionPage />} />
+        <Route path="/menu" element={<MenuPage />} />
+        <Route path="/eventos" element={<EventosPage />} />
+        <Route path="/eventos/:slug" element={<EventoDetallePage />} />
+        <Route path="/eventos/:slug/reservar" element={<ReservaPage />} />
+        <Route path="/boleto/:folio" element={<BoletoPage />} />
+        <Route path="/facturar" element={<FacturacionPage />} />
+        <Route path="/factura/:folioFiscal" element={<FacturaPage />} />
+      </Routes>
+    </BrowserRouter>
   </StrictMode>,
 )
