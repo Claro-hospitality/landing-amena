@@ -46,3 +46,18 @@ There is no lint script and no test suite configured in this repo — `tsc -b` (
 Firebase Hosting, site `amena-principal` (`firebase.json`, `.firebaserc` project `amena-20df0`). GitHub Actions (`.github/workflows/`) auto-deploy: pushes to `main` deploy to the live channel; pull requests get a 7-day preview channel deploy. There's no manual deploy step to remember — merging to `main` ships to production.
 
 El paso de build pasa `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` y `VITE_SINERGYPAY_PUBLIC_KEY` desde los secrets del repo. **No son opcionales**: sin ellas `src/lib/supabase.ts` lanza al importarse y, como `main.tsx` importa todas las páginas de forma estática, el sitio se despliega en blanco — también la portada. Si alguna vez ves amena.social vacío, revisa primero esos secrets.
+
+## Pendiente antes del próximo deploy
+
+- **Dar de alta los secrets del repo** (Settings → Secrets → Actions): `VITE_SUPABASE_URL`,
+  `VITE_SUPABASE_ANON_KEY`, `VITE_SINERGYPAY_PUBLIC_KEY`. Los workflows ya los pasan al build,
+  pero si no existen el sitio se despliega **en blanco** (ver Deployment).
+- **El cobro sigue en sandbox.** `SINERGYPAY_BASE_URL` es un secret de la Edge Function en
+  `amena-backend` y su default es el sandbox, a propósito. Reservar "funciona" sin cobrar hasta
+  que se ponga la URL real.
+- **`/boleto/:folio` no puede reconstruir un boleto.** Vive del state que le pasa la pantalla de
+  confirmación, así que el boleto existe solo en esa pestaña — y el botón de Google Wallet está
+  ahí. `getReservacionByFolio` es la mitad del arreglo; la otra mitad es una RPC pública que pida
+  folio + correo (abrir `eventos.reservaciones` a `anon` expondría datos de terceros).
+- **El calendario abre fijo en agosto 2026**: `useState(() => new Date(2026, 7, 1))` en
+  `EventosPage.tsx`. Hoy no se nota; en cuanto pase el mes, sí.
