@@ -1,3 +1,8 @@
+// La Edge Function que timbra se llama `facturar-consumo` y vive en `amena-backend`. El
+// nombre es en español y dice qué factura, como su hermana `facturar-corte` (la de los
+// cortes semanales a empresas): en el mismo proyecto de Supabase conviven las dos.
+// EMISOR y DATOS_COMPROBANTE de abajo son solo para MOSTRAR en pantalla; los valores que
+// se timbran de verdad salen de `_shared/facturacion-constantes.ts` de ese repo.
 import { supabase } from '../lib/supabase'
 import { formatFechaHoraLarga } from '../lib/fechas'
 
@@ -125,7 +130,7 @@ export async function emitirFactura(input: {
   usoCfdi: string
   correo: string
 }): Promise<FacturaEmitida> {
-  const { data, error } = await supabase.functions.invoke('facturama', {
+  const { data, error } = await supabase.functions.invoke('facturar-consumo', {
     body: { action: 'emitir', ...input },
   })
   if (error) throw new Error(error.message)
@@ -136,7 +141,7 @@ export async function emitirFactura(input: {
 export async function listarCatalogoFacturama(
   catalogo: 'FiscalRegimens' | 'CfdiUses'
 ): Promise<CatalogoItem[]> {
-  const { data, error } = await supabase.functions.invoke('facturama', {
+  const { data, error } = await supabase.functions.invoke('facturar-consumo', {
     body: { action: 'catalogs', catalogo },
   })
   if (error) throw new Error(error.message)
@@ -149,7 +154,7 @@ export async function descargarArchivoFactura(
   facturamaId: string,
   format: 'pdf' | 'xml'
 ): Promise<{ contentType: string; base64: string }> {
-  const { data, error } = await supabase.functions.invoke('facturama', {
+  const { data, error } = await supabase.functions.invoke('facturar-consumo', {
     body: { action: 'descargar', facturamaId, format },
   })
   if (error) throw new Error(error.message)

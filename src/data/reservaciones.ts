@@ -90,15 +90,16 @@ function mapReservacionRow(row: ReservacionRow): Reservacion {
   }
 }
 
-export async function listReservaciones(): Promise<Reservacion[]> {
-  const { data, error } = await supabase
-    .from('reservaciones')
-    .select(SELECT_CON_EVENTO)
-    .order('reservada_el', { ascending: false })
-  if (error) throw error
-  return (data as unknown as ReservacionRow[]).map(mapReservacionRow)
-}
-
+/**
+ * Consulta una reservación por folio. Hoy NADIE la llama: `/boleto/:folio` pinta el boleto con
+ * el state que le pasa la pantalla de confirmación, así que un folio abierto en frío responde
+ * "este boleto no está disponible desde aquí" — el boleto vive solo en esa pestaña.
+ *
+ * Se conserva porque es la mitad del arreglo de eso. La otra mitad es del backend: hoy `anon`
+ * no tiene privilegio sobre `eventos.reservaciones` (a propósito), así que esto devolvería
+ * permission denied. Para que un cliente recupere su boleto hace falta una RPC pública que
+ * pida folio + correo; abrir la tabla a `anon` expondría los datos de cualquiera con un folio.
+ */
 export async function getReservacionByFolio(folio: string): Promise<Reservacion | undefined> {
   const { data, error } = await supabase
     .from('reservaciones')
@@ -147,29 +148,4 @@ export function autorizarPago(input: DatosPago): Promise<ResultadoPago> {
 
 export function confirmarPago(input: DatosPago): Promise<ResultadoPago> {
   return invocarReservarPago('confirm', input)
-}
-
-export async function validarBoleto(folio: string): Promise<
-  | { tipo: 'validado'; reservacion: Reservacion }
-  | { tipo: 'ya-usado'; reservacion: Reservacion }
-  | { tipo: 'no-encontrado' }
-> {
-  const actual = await getReservacionByFolio(folio)
-  if (!actual) return { tipo: 'no-encontrado' }
-  if (actual.estadoBoleto === 'validado') return { tipo: 'ya-usado', reservacion: actual }
-
-  const { data, error } = await supabase
-    .from('reservaciones')
-    .update({ estado_boleto: 'validado', validada_el: new Date().toISOString() })
-    .eq('folio', actual.folio)
-    .neq('estado_boleto', 'validado')
-    .select(SELECT_CON_EVENTO)
-    .maybeSingle()
-  if (error) throw error
-
-  if (!data) {
-    const revalidado = await getReservacionByFolio(folio)
-    return { tipo: 'ya-usado', reservacion: revalidado ?? actual }
-  }
-  return { tipo: 'validado', reservacion: mapReservacionRow(data as unknown as ReservacionRow) }
 }

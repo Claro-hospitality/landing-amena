@@ -27,6 +27,13 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Sin estas variables el bundle sale con `undefined` y src/lib/supabase.ts lanza al
+          # importarse: el sitio se despliega EN BLANCO, incluidas las páginas de marketing
+          # (main.tsx importa todas las páginas de forma estática). Van como secrets del repo.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SINERGYPAY_PUBLIC_KEY: ${{ secrets.VITE_SINERGYPAY_PUBLIC_KEY }}
 
       - name: Deploy to Firebase Hosting (live)
         uses: FirebaseExtended/action-hosting-deploy@v0
