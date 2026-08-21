@@ -1,6 +1,8 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import type { Evento } from './data/eventos'
+import { AlertTriangle } from 'lucide-react'
+import { cn } from './lib/utils'
+import { recuperarBoleto, type BoletoRecuperado } from './data/reservaciones'
 import { generarQrDataUrl } from './lib/qr'
 import { obtenerLinkGoogleWallet } from './data/googleWallet'
 
@@ -8,48 +10,120 @@ const BoletoDescargaPdf = lazy(() =>
   import('./pdf/BoletoDescargaPdf').then((m) => ({ default: m.BoletoDescargaPdf }))
 )
 
-type BoletoState = {
-  evento: Evento
-  datos: { nombre: string; asistentes: number }
-  folio: string
-  total: number
-  ultimosDigitos: string
-  fechaCompra: string
+/**
+ * Un boleto llega a esta pantalla por dos caminos:
+ *
+ *  1. Recién pagado — la confirmación de `/eventos/:slug/reservar` navega acá con el boleto
+ *     completo en el state del router. Es el camino de siempre.
+ *  2. En frío — alguien abre `/boleto/:folio` en otra pestaña, desde su correo o desde el
+ *     historial, y no hay state. Entonces se pide el correo de la reservación y el boleto se
+ *     recupera con la RPC `boleto_por_folio`. El folio solo NO alcanza: va impreso en el
+ *     boleto y dentro del QR, así que quien lo vea no debe poder leer los datos de su dueño.
+ */
+export function BoletoPage() {
+  const { folio = '' } = useParams()
+  const location = useLocation()
+  const delRouter = location.state as BoletoRecuperado | null
+  const [recuperado, setRecuperado] = useState<BoletoRecuperado | null>(null)
+
+  const boleto = delRouter?.folio === folio ? delRouter : recuperado
+
+  if (!boleto) {
+    return <RecuperarBoleto folio={folio} onRecuperado={setRecuperado} />
+  }
+  return <Boleto boleto={boleto} />
 }
 
-export function BoletoPage() {
-  const { folio } = useParams()
-  const location = useLocation()
-  const state = location.state as BoletoState | null
+function RecuperarBoleto({
+  folio,
+  onRecuperado,
+}: {
+  folio: string
+  onRecuperado: (boleto: BoletoRecuperado) => void
+}) {
+  const [email, setEmail] = useState('')
+  const [buscando, setBuscando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  if (!state || state.folio !== folio) {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-5 text-center text-foreground">
-        <h1 className="text-xl font-semibold">Este boleto no está disponible desde aquí</h1>
-        <p className="max-w-sm text-sm text-muted-foreground">
-          Descarga tu boleto desde la pantalla de confirmación justo después de reservar.
+  async function alEnviar(e: FormEvent) {
+    e.preventDefault()
+    setBuscando(true)
+    setError(null)
+    try {
+      const boleto = await recuperarBoleto(folio, email)
+      if (!boleto) {
+        // Un solo mensaje para folio inexistente y correo que no cuadra: la RPC no distingue
+        // los dos casos a propósito, y decirlo acá delataría qué folios existen.
+        setError('No encontramos un boleto con ese folio y ese correo. Revisa los dos.')
+        setBuscando(false)
+        return
+      }
+      onRecuperado(boleto)
+    } catch {
+      setError('No pudimos consultar tu boleto. Intenta de nuevo en un momento.')
+      setBuscando(false)
+    }
+  }
+
+  return (
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-5 py-12 text-foreground">
+      <div className="w-full max-w-sm">
+        <p className="text-lg font-bold text-primary">amena</p>
+        <h1 className="mt-4 text-xl font-semibold">Consulta tu boleto</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Escribe el correo con el que reservaste para ver el boleto del folio{' '}
+          <span className="font-mono font-semibold text-foreground">{folio}</span>.
         </p>
-        <Link
-          to="/eventos"
-          className="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-naranja-600"
-        >
+
+        <form onSubmit={alEnviar} className="mt-6 flex flex-col gap-3">
+          <label htmlFor="correo-boleto" className="text-sm font-medium">
+            Correo de la reservación
+          </label>
+          <input
+            id="correo-boleto"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@correo.com"
+            className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary"
+          />
+          <button
+            type="submit"
+            disabled={buscando}
+            className="mt-1 inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-naranja-600 disabled:opacity-60"
+          >
+            {buscando ? 'Buscando…' : 'Ver mi boleto'}
+          </button>
+        </form>
+
+        {error && (
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-naranja-200 bg-naranja-50 p-4">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-naranja-700" />
+            <p className="text-sm text-naranja-700/90">{error}</p>
+          </div>
+        )}
+
+        <Link to="/eventos" className="mt-6 inline-block text-sm font-semibold text-primary hover:underline">
           Ver eventos
         </Link>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
-  const { evento, datos, total, ultimosDigitos, fechaCompra } = state
+function Boleto({ boleto }: { boleto: BoletoRecuperado }) {
+  const { evento, datos, folio, total, ultimosDigitos, fechaCompra, estadoPago, metodoPago } = boleto
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [agregandoWallet, setAgregandoWallet] = useState(false)
   const [errorWallet, setErrorWallet] = useState<string | null>(null)
 
   useEffect(() => {
-    if (folio) generarQrDataUrl(folio).then(setQrDataUrl)
+    generarQrDataUrl(folio).then(setQrDataUrl)
   }, [folio])
 
   async function agregarAGoogleWallet() {
-    if (!folio) return
     setAgregandoWallet(true)
     setErrorWallet(null)
     try {
@@ -83,7 +157,7 @@ export function BoletoPage() {
             <BoletoDescargaPdf
               evento={evento}
               datos={datos}
-              folio={folio ?? ''}
+              folio={folio}
               total={total}
               ultimosDigitos={ultimosDigitos}
               fechaCompraFmt={fechaCompraFmt}
@@ -116,8 +190,17 @@ export function BoletoPage() {
               Boleto de evento
             </p>
             <p className="font-mono text-sm font-semibold">{folio}</p>
-            <span className="mt-1 inline-block rounded-full bg-salvia-100 px-2.5 py-0.5 text-xs font-semibold text-salvia-700">
-              PAGADA
+            {/* El estado sale de la reservación, no fijo: un boleto recuperado puede venir
+                cancelado y el boleto no debe decir PAGADA cuando no lo está. */}
+            <span
+              className={cn(
+                'mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase',
+                estadoPago === 'pagada'
+                  ? 'bg-salvia-100 text-salvia-700'
+                  : 'bg-naranja-100 text-naranja-700'
+              )}
+            >
+              {estadoPago}
             </span>
           </div>
         </div>
@@ -134,7 +217,7 @@ export function BoletoPage() {
               <Dato etiqueta="Asistente" valor={datos.nombre || '—'} />
               <Dato etiqueta="Asistentes" valor={`${datos.asistentes} personas`} />
               <Dato etiqueta="Lugar" valor={evento.lugar} />
-              <Dato etiqueta="Folio" valor={folio ?? ''} />
+              <Dato etiqueta="Folio" valor={folio} />
             </dl>
           </div>
           <div className="flex flex-col items-center justify-center gap-2 rounded-xl bg-tinta-900 p-4 text-center">
@@ -170,7 +253,10 @@ export function BoletoPage() {
 
         <div className="grid grid-cols-2 gap-4 border-t border-dashed border-border pt-6 text-sm sm:grid-cols-4">
           <Dato etiqueta="Subtotal" valor={`$${total.toLocaleString('es-MX')} MXN`} />
-          <Dato etiqueta="Método de pago" valor={`Tarjeta ···· ${ultimosDigitos} · Synergy Pay`} />
+          <Dato
+            etiqueta="Método de pago"
+            valor={metodoPago ?? `Tarjeta ···· ${ultimosDigitos} · Synergy Pay`}
+          />
           <Dato etiqueta="Fecha de compra" valor={fechaCompraFmt} />
           <Dato etiqueta="Total pagado" valor={`$${total.toLocaleString('es-MX')} MXN`} />
         </div>

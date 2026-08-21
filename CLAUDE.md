@@ -23,6 +23,40 @@ npm run build     # tsc -b (typecheck) + vite build -> dist/
 npm run preview   # serve the production build locally
 ```
 
+### Desarrollo contra el Supabase local
+
+El stack local vive en `../amena-backend` (`supabase start` allá). Su `project_id` es
+`amena-backend`, así que **no usa los puertos por defecto**: API `54331`, DB `54332`, Studio
+`54333`, Mailpit `54334`. `config.toml` ya expone el schema `eventos` en `[api] schemas`, que es
+el requisito para que el `db: { schema: 'eventos' }` de `src/lib/supabase.ts` funcione.
+
+Para apuntar este sitio ahí, en `.env.local`:
+
+```
+VITE_SUPABASE_URL=http://127.0.0.1:54331
+VITE_SUPABASE_ANON_KEY=<PUBLISHABLE_KEY de `supabase status`>
+```
+
+`supabase db reset` en ese repo recarga migraciones + `seed.sql`, que trae eventos de ejemplo
+(unos publicados, uno en borrador) para el catálogo.
+
+#### Reservar en local sin llaves de SinergyPay
+
+El flujo de reserva se puede probar completo sin pasarela, con las dos mitades puestas:
+
+- **backend** — `SINERGYPAY_SALTAR_COBRO=1` en `../amena-backend/supabase/functions/.env`:
+  `reservar-pago` se salta la pasarela y llama directo a `crear_reservacion`. Solo aplica en
+  local (la función exige además que `SUPABASE_URL` sea local), y la fila queda marcada con
+  `synergy_pay_id = 'LOCAL-SIN-COBRO-<folio>'` y `metodo_pago … · SIN COBRO (local)`.
+- **front** — dejar `VITE_SINERGYPAY_PUBLIC_KEY` vacío. Sin llave, `ReservaPage` no carga el SDK
+  3DS, usa un `sessionId` de relleno y pinta un aviso verde de "no se va a cobrar". La guarda es
+  `import.meta.env.DEV`: **en un build de producción una llave faltante sigue siendo un error
+  visible**, nunca un formulario que reserva sin cobrar.
+
+Para cobrar de verdad contra el sandbox: quitar `SINERGYPAY_SALTAR_COBRO`, poner
+`SINERGYPAY_PRIVATE_KEY` allá y `VITE_SINERGYPAY_PUBLIC_KEY` acá. Sin ninguna de las dos cosas
+la función responde `{"error":"PASARELA_NO_CONFIGURADA"}` y no se crea nada.
+
 There is no lint script and no test suite configured in this repo — `tsc -b` (part of `npm run build`) is the only automated check. TypeScript is in `strict` mode with `noUnusedLocals`/`noUnusedParameters` enabled, so unused code will fail the build.
 
 ## Architecture
@@ -55,9 +89,10 @@ El paso de build pasa `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` y `VITE_SINE
 - **El cobro sigue en sandbox.** `SINERGYPAY_BASE_URL` es un secret de la Edge Function en
   `amena-backend` y su default es el sandbox, a propósito. Reservar "funciona" sin cobrar hasta
   que se ponga la URL real.
-- **`/boleto/:folio` no puede reconstruir un boleto.** Vive del state que le pasa la pantalla de
-  confirmación, así que el boleto existe solo en esa pestaña — y el botón de Google Wallet está
-  ahí. `getReservacionByFolio` es la mitad del arreglo; la otra mitad es una RPC pública que pida
-  folio + correo (abrir `eventos.reservaciones` a `anon` expondría datos de terceros).
-- **El calendario abre fijo en agosto 2026**: `useState(() => new Date(2026, 7, 1))` en
-  `EventosPage.tsx`. Hoy no se nota; en cuanto pase el mes, sí.
+- ~~`/boleto/:folio` no puede reconstruir un boleto~~ — resuelto: abierto en frío pide el correo
+  de la reservación y lo recupera con la RPC `eventos.boleto_por_folio(folio, correo)`
+  (`amena-backend`, migración `20260821164721`). El folio no autoriza solo: va impreso en el
+  boleto y dentro del QR, así que el correo es el segundo factor. La RPC devuelve cero filas sin
+  distinguir "folio inexistente" de "folio con otro correo" — y `BoletoPage` muestra un solo
+  mensaje por lo mismo: distinguirlos delataría qué folios existen.
+- ~~El calendario abría fijo en agosto 2026~~ — resuelto: `EventosPage.tsx` abre en el mes en curso.

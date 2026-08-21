@@ -11,7 +11,13 @@ import {
 import { cn } from './lib/utils'
 import { LogotipoAmena } from './components/logotipo-amena'
 import { getEventoBySlug, type Evento } from './data/eventos'
-import { autorizarPago, confirmarPago, type DatosTarjeta, type DomicilioFacturacion } from './data/reservaciones'
+import {
+  autorizarPago,
+  confirmarPago,
+  type BoletoRecuperado,
+  type DatosTarjeta,
+  type DomicilioFacturacion,
+} from './data/reservaciones'
 import { generarQrDataUrl } from './lib/qr'
 import { obtenerLinkGoogleWallet } from './data/googleWallet'
 import { iniciarSesionSinergyPay3ds, montarVerificacionSinergyPay3ds, type SinergyPayOtpData } from './lib/sinergypay'
@@ -292,6 +298,19 @@ function DatosStep({
 //   4000000000002701 (Visa) / 5200000000002235 (Mastercard) → frictionless, sin OTP
 //   4000000000002503 (Visa) / 5200000000002151 (Mastercard) → requiere OTP/3DS
 
+const CLAVE_SINERGYPAY = import.meta.env.VITE_SINERGYPAY_PUBLIC_KEY
+
+/**
+ * Modo local sin pasarela. Sin llave pública no se puede abrir la sesión 3DS, y en desarrollo
+ * eso NO es un error: es la contraparte en el navegador de SINERGYPAY_SALTAR_COBRO=1 en
+ * `amena-backend`, donde `reservar-pago` ignora el sessionId y reserva sin cobrar.
+ *
+ * La guarda es `import.meta.env.DEV`, que Vite deja en `false` en cualquier build. En
+ * producción, una llave faltante sigue siendo un error visible (el aviso de sdkError) en vez de
+ * un formulario que reserva sin cobrar.
+ */
+const SIN_PASARELA_LOCAL = import.meta.env.DEV && !CLAVE_SINERGYPAY
+
 const TARJETA_INICIAL: DatosTarjeta = { cardholder: '', cardNumber: '', expiryMonth: '', expiryYear: '', cvv: '' }
 
 const DOMICILIO_INICIAL: DomicilioFacturacion = {
@@ -327,8 +346,14 @@ function PagoStep({
   const [pendienteOtp, setPendienteOtp] = useState<{ folio: string; otpData: SinergyPayOtpData } | null>(null)
 
   useEffect(() => {
+    if (SIN_PASARELA_LOCAL) {
+      // Ni se carga el SDK: el sessionId solo viaja hasta reservar-pago, que en modo local lo
+      // ignora. Sirve de sessionId cualquier cosa que no sea vacío para desbloquear el submit.
+      setSessionId('local-sin-cobro')
+      return
+    }
     let cancelado = false
-    iniciarSesionSinergyPay3ds(import.meta.env.VITE_SINERGYPAY_PUBLIC_KEY)
+    iniciarSesionSinergyPay3ds(CLAVE_SINERGYPAY)
       .then((id) => {
         if (!cancelado) setSessionId(id)
       })
@@ -439,6 +464,20 @@ function PagoStep({
             <p className="text-sm text-naranja-700/90">
               Alguien más reservó mientras completabas tus datos. No se realizó ningún cargo a tu
               tarjeta — vuelve al paso anterior para ver el cupo actualizado.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {SIN_PASARELA_LOCAL && (
+        <div className="flex items-start gap-3 rounded-xl border border-salvia-200 bg-salvia-50 p-4">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-salvia-700" />
+          <div>
+            <p className="text-sm font-semibold text-salvia-700">Modo local: no se va a cobrar</p>
+            <p className="text-sm text-salvia-700/90">
+              No hay llave de Synergy Pay en <span className="font-mono">.env.local</span>, así
+              que la reservación se crea sin pasar por la pasarela. Los datos de tarjeta de abajo
+              se guardan solo como los últimos 4 dígitos.
             </p>
           </div>
         </div>
@@ -693,8 +732,20 @@ function ExitoStep({
   }, [folio])
 
   function verBoleto() {
+    // La forma de este state es `BoletoRecuperado`: es el mismo contrato que devuelve la RPC
+    // cuando el boleto se recupera en frío, para que /boleto/:folio pinte igual por los dos
+    // caminos. Recién pagado siempre es 'pagada' / 'sin usar' — crear_reservacion lo garantiza.
     navigate(`/boleto/${folio}`, {
-      state: { evento, datos, folio, total, ultimosDigitos, fechaCompra: new Date().toISOString() },
+      state: {
+        evento,
+        datos,
+        folio,
+        total,
+        ultimosDigitos,
+        fechaCompra: new Date().toISOString(),
+        estadoPago: 'pagada',
+        estadoBoleto: 'sin usar',
+      } satisfies BoletoRecuperado,
     })
   }
 

@@ -22,7 +22,13 @@ export function EventosPage() {
   const [eventos, setEventos] = useState<Evento[] | null>(null)
   const [vista, setVista] = useState<'listado' | 'calendario'>('listado')
   const [categoria, setCategoria] = useState<Categoria | 'Todos'>('Todos')
-  const [mesActual, setMesActual] = useState(() => new Date(2026, 7, 1))
+  // Abre en el mes en curso, no en uno fijo: el calendario tiene su propio botón "hoy" y el
+  // catálogo trae los eventos de cualquier mes, así que el estado inicial solo elige qué mes se
+  // ve primero.
+  const [mesActual, setMesActual] = useState(() => {
+    const hoy = new Date()
+    return new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+  })
 
   useEffect(() => {
     listEventosPublicados().then(setEventos)
